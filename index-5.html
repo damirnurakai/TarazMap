@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#102d35">
+<title>TarazMap — полезная карта города</title>
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="preconnect" href="https://tile.openstreetmap.org">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--ink:#102d35;--muted:#637579;--mint:#8de0bd;--paper:#f5f8f6;--line:#e2eae6;--white:#fff}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+header{background:var(--ink);color:white;padding:22px max(20px,calc((100vw - 1180px)/2));}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;gap:11px;font-weight:800;font-size:21px;letter-spacing:-.5px}.logo{width:38px;height:38px;border-radius:13px;background:var(--mint);color:var(--ink);display:grid;place-items:center;font-size:21px}
+.lang{border:1px solid #527077;color:white;background:#1d4148;border-radius:12px;padding:9px 12px;cursor:pointer}
+.hero{max-width:1180px;margin:28px auto 4px}.eyebrow{color:var(--mint);font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}.hero h1{font-size:clamp(28px,5vw,48px);line-height:1.04;letter-spacing:-1.8px;margin:10px 0}.hero p{color:#c3d5d2;max-width:600px;margin:0;line-height:1.6}
+main{max-width:1180px;margin:24px auto;padding:0 18px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}.stat{background:white;border:1px solid var(--line);border-radius:16px;padding:15px}.stat strong{display:block;font-size:24px}.stat span{font-size:12px;color:var(--muted)}
+.layout{display:grid;grid-template-columns:330px 1fr;gap:16px}.panel,.mapwrap{background:white;border:1px solid var(--line);border-radius:20px;overflow:hidden}.panel{padding:18px}.panel h2{font-size:17px;margin:0 0 12px}.search{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:14px;outline:none}.search:focus,input:focus,textarea:focus,select:focus{border-color:#4b9e82;box-shadow:0 0 0 3px #8de0bd44}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:13px 0 18px}.filter{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px;text-align:left;cursor:pointer;font-size:12px;color:var(--ink)}.filter.active{background:#e8f8f0;border-color:#8bd7b5;font-weight:700}.filter span{display:block;font-size:17px;margin-bottom:4px}
+.primary{border:0;background:var(--ink);color:white;border-radius:12px;padding:12px 14px;font-weight:700;cursor:pointer}.primary:hover{background:#204c53}.secondary{border:1px solid var(--line);background:white;color:var(--ink);border-radius:12px;padding:10px 12px;cursor:pointer;font-weight:650}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1}
+.tip{background:#f0f7f3;border-radius:13px;padding:12px;color:#45615b;font-size:12px;line-height:1.5;margin-top:15px}
+.maphead{padding:15px 17px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line)}.maphead strong{font-size:14px}.maphead small{color:var(--muted)}#map{height:560px;width:100%;background:#e8efeb}
+.list{margin-top:20px}.listhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.listhead h2{font-size:18px;margin:0}.places{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.place{background:white;border:1px solid var(--line);border-radius:14px;padding:13px}.place b{display:block;font-size:14px}.place small{color:var(--muted)}.tag{display:inline-block;background:#eef6f1;color:#386b56;padding:4px 7px;border-radius:7px;font-size:10px;margin:8px 0}.empty{background:white;border:1px dashed #cbd9d1;border-radius:14px;padding:20px;color:var(--muted);font-size:13px;line-height:1.5;grid-column:1/-1}
+footer{max-width:1180px;margin:28px auto 0;padding:18px;color:var(--muted);font-size:12px;line-height:1.6;border-top:1px solid var(--line)}
+dialog{border:0;border-radius:18px;padding:0;width:min(480px,calc(100% - 28px));box-shadow:0 20px 70px #102d3540}dialog::backdrop{background:#102d3577}.modal{padding:22px}.modal h2{margin:0 0 5px}.modal p{color:var(--muted);font-size:13px;line-height:1.5}.field{margin:12px 0}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px;font:inherit;font-size:14px}.field textarea{min-height:72px;resize:vertical}.modalbuttons{display:flex;gap:8px;margin-top:16px}.modalbuttons button{flex:1}
+.leaflet-popup-content-wrapper{border-radius:12px}.leaflet-popup-content{font-family:inherit}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.panel{order:2}.mapwrap{order:1}#map{height:430px}.hero{margin-top:22px}.places{grid-template-columns:1fr}}
+@media(max-width:480px){header{padding:17px}.stats{gap:7px}.stat{padding:11px}.stat strong{font-size:20px}.stat span{font-size:10px}.maphead{align-items:flex-start;flex-direction:column}#map{height:380px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div class="brand"><div class="logo">⌖</div><span>TarazMap</span></div>
+    <button class="lang" id="langBtn">Қазақша</button>
+  </div>
+  <section class="hero">
+    <div class="eyebrow" data-ru="ГОРОДСКАЯ КАРТА ПОЛЕЗНЫХ МЕСТ" data-kk="ПАЙДАЛЫ ОРЫНДАРДЫҢ ҚАЛА КАРТАСЫ">ГОРОДСКАЯ КАРТА ПОЛЕЗНЫХ МЕСТ</div>
+    <h1 data-ru="Тараз — город возможностей." data-kk="Тараз — мүмкіндіктер қаласы.">Тараз — город возможностей.</h1>
+    <p data-ru="Находи места для отдыха, спорта и повседневной жизни. Добавляй полезные точки и помогай сделать город удобнее для всех." data-kk="Демалысқа, спортқа және күнделікті өмірге арналған орындарды тап. Пайдалы нүктелерді қосып, қаланы баршаға ыңғайлы етуге көмектес.">Находи места для отдыха, спорта и повседневной жизни. Добавляй полезные точки и помогай сделать город удобнее для всех.</p>
+  </section>
+</header>
+<main>
+  <section class="stats">
+    <div class="stat"><strong id="count">0</strong><span data-ru="добавлено мест" data-kk="қосылған орын">добавлено мест</span></div>
+    <div class="stat"><strong>5</strong><span data-ru="категорий" data-kk="санат">категорий</span></div>
+    <div class="stat"><strong>2</strong><span data-ru="языка" data-kk="тіл">языка</span></div>
+  </section>
+  <section class="layout">
+    <aside class="panel">
+      <h2 data-ru="Найти полезное место" data-kk="Пайдалы орынды табу">Найти полезное место</h2>
+      <input class="search" id="search" placeholder="Поиск по названию..." data-placeholder-ru="Поиск по названию..." data-placeholder-kk="Атауы бойынша іздеу...">
+      <div class="filters" id="filters">
+        <button class="filter active" data-cat="all"><span>✦</span><i data-ru="Все места" data-kk="Барлық орындар">Все места</i></button>
+        <button class="filter" data-cat="rest"><span>🌳</span><i data-ru="Отдых" data-kk="Демалыс">Отдых</i></button>
+        <button class="filter" data-cat="sport"><span>🏀</span><i data-ru="Спорт" data-kk="Спорт">Спорт</i></button>
+        <button class="filter" data-cat="water"><span>💧</span><i data-ru="Питьевая вода" data-kk="Ауыз су">Питьевая вода</i></button>
+        <button class="filter" data-cat="eco"><span>♻️</span><i data-ru="Экология" data-kk="Экология">Экология</i></button>
+        <button class="filter" data-cat="access"><span>♿</span><i data-ru="Доступность" data-kk="Қолжетімділік">Доступность</i></button>
+      </div>
+      <div class="actions">
+        <button class="primary" id="addBtn" data-ru="+ Добавить место" data-kk="+ Орын қосу">+ Добавить место</button>
+        <button class="secondary" id="exportBtn" title="Скачать данные">Экспорт</button>
+      </div>
+      <div class="tip" data-ru="💡 Нажми «Добавить место», затем выбери точку на карте. Указывайте только проверенные сведения — так карта будет действительно полезной." data-kk="💡 «Орын қосу» батырмасын басып, картадан нүктені таңда. Тек тексерілген ақпаратты енгіз — сонда карта шынымен пайдалы болады.">💡 Нажми «Добавить место», затем выбери точку на карте. Указывайте только проверенные сведения — так карта будет действительно полезной.</div>
+    </aside>
+    <section class="mapwrap">
+      <div class="maphead"><strong data-ru="Карта Тараза" data-kk="Тараз картасы">Карта Тараза</strong><small data-ru="Нажми на карту, чтобы отметить место" data-kk="Орынды белгілеу үшін картаны бас">Нажми на карту, чтобы отметить место</small></div>
+      <div id="map"></div>
+    </section>
+  </section>
+  <section class="list">
+    <div class="listhead"><h2 data-ru="Места на карте" data-kk="Картадағы орындар">Места на карте</h2><small id="shown" style="color:var(--muted)">0 мест</small></div>
+    <div class="places" id="places">
+      <div class="empty" data-ru="Пока здесь нет добавленных точек. Добавьте первое проверенное место — например, бесплатную спортивную площадку или общественную зону отдыха." data-kk="Әзірге нүктелер жоқ. Алғашқы тексерілген орынды қосыңыз — мысалы, тегін спорт алаңын немесе қоғамдық демалыс аймағын.">Пока здесь нет добавленных точек. Добавьте первое проверенное место — например, бесплатную спортивную площадку или общественную зону отдыха.</div>
+    </div>
+  </section>
+</main>
+<footer data-ru="TarazMap — ученический общественный проект. Карта наполняется участниками проекта. Перед посещением проверяйте актуальность информации. Основа карты: OpenStreetMap." data-kk="TarazMap — оқушылардың қоғамдық жобасы. Картаны жоба қатысушылары толықтырады. Бармас бұрын ақпараттың өзектілігін тексеріңіз. Карта негізі: OpenStreetMap.">TarazMap — ученический общественный проект. Карта наполняется участниками проекта. Перед посещением проверяйте актуальность информации. Основа карты: OpenStreetMap.</footer>
+
+<dialog id="placeDialog">
+  <form class="modal" id="placeForm">
+    <h2 data-ru="Добавить место" data-kk="Орын қосу">Добавить место</h2>
+    <p data-ru="Сначала нажми на нужную точку карты, затем заполни информацию." data-kk="Алдымен картадағы қажетті нүктені бас, содан кейін ақпаратты толтыр.">Сначала нажми на нужную точку карты, затем заполни информацию.</p>
+    <div class="field"><label data-ru="Название места *" data-kk="Орын атауы *">Название места *</label><input id="name" required maxlength="70" placeholder="Например, спортивная площадка"></div>
+    <div class="field"><label data-ru="Категория *" data-kk="Санат *">Категория *</label><select id="category" required><option value="rest">🌳 Отдых</option><option value="sport">🏀 Спорт</option><option value="water">💧 Питьевая вода</option><option value="eco">♻️ Экология</option><option value="access">♿ Доступность</option></select></div>
+    <div class="field"><label data-ru="Короткое описание" data-kk="Қысқаша сипаттама">Короткое описание</label><textarea id="description" maxlength="220" placeholder="Что полезного есть в этом месте?"></textarea></div>
+    <div class="field"><label data-ru="Адрес или ориентир" data-kk="Мекенжай немесе бағдар">Адрес или ориентир</label><input id="address" maxlength="100" placeholder="Улица, район или ориентир"></div>
+    <div class="field"><label data-ru="Координаты выбранной точки" data-kk="Таңдалған нүкте координаттары">Координаты выбранной точки</label><input id="coords" readonly></div>
+    <div class="modalbuttons"><button type="button" class="secondary" id="cancelBtn" data-ru="Отмена" data-kk="Болдырмау">Отмена</button><button class="primary" type="submit" data-ru="Сохранить место" data-kk="Орынды сақтау">Сохранить место</button></div>
+  </form>
+</dialog>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const TARAZ=[42.9006,71.3669];
+const map=L.map('map').setView(TARAZ,13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+const icons={rest:'🌳',sport:'🏀',water:'💧',eco:'♻️',access:'♿'};
+let points=JSON.parse(localStorage.getItem('tarazmap_points')||'[]');
+let active='all', selected=null, lang='ru', markers=[];
+const dialog=document.getElementById('placeDialog');
+function save(){localStorage.setItem('tarazmap_points',JSON.stringify(points));render()}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function catName(c){const ru={rest:'Отдых',sport:'Спорт',water:'Питьевая вода',eco:'Экология',access:'Доступность'};const kk={rest:'Демалыс',sport:'Спорт',water:'Ауыз су',eco:'Экология',access:'Қолжетімділік'};return (lang==='ru'?ru:kk)[c]||c}
+function render(){
+ markers.forEach(m=>map.removeLayer(m));markers=[];
+ const q=document.getElementById('search').value.toLowerCase();
+ const filtered=points.filter(p=>(active==='all'||p.category===active)&&(`${p.name} ${p.description} ${p.address}`).toLowerCase().includes(q));
+ filtered.forEach(p=>{
+  const marker=L.marker([p.lat,p.lng]).addTo(map).bindPopup(`<b>${esc(p.name)}</b><br>${esc(catName(p.category))}<br>${esc(p.description)}${p.address?'<br><small>'+esc(p.address)+'</small>':''}`);
+  markers.push(marker);
+ });
+ document.getElementById('count').textContent=points.length;
+ document.getElementById('shown').textContent=lang==='ru'?`${filtered.length} мест`:`${filtered.length} орын`;
+ const list=document.getElementById('places');list.innerHTML='';
+ if(!filtered.length){const d=document.createElement('div');d.className='empty';d.textContent=lang==='ru'?'Нет мест по этому запросу. Добавьте новую точку или измените поиск.':'Бұл сұрау бойынша орындар жоқ. Жаңа нүкте қосыңыз немесе іздеуді өзгертіңіз.';list.appendChild(d)}
+ filtered.forEach(p=>{const d=document.createElement('article');d.className='place';d.innerHTML=`<b>${icons[p.category]} ${esc(p.name)}</b><span class="tag">${esc(catName(p.category))}</span><div style="font-size:13px;line-height:1.45">${esc(p.description||'')}</div><small>${esc(p.address||`${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`)}</small>`;d.addEventListener('click',()=>{map.setView([p.lat,p.lng],16);markers.find(m=>m.getLatLng().lat===p.lat&&m.getLatLng().lng===p.lng)?.openPopup()});list.appendChild(d)});
+}
+map.on('click',e=>{selected=e.latlng;document.getElementById('coords').value=`${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;});
+document.getElementById('addBtn').onclick=()=>{if(!selected){alert(lang==='ru'?'Сначала нажми на нужное место на карте.':'Алдымен картадан қажетті орынды басыңыз.');return}dialog.showModal()};
+document.getElementById('cancelBtn').onclick=()=>dialog.close();
+document.getElementById('placeForm').onsubmit=e=>{e.preventDefault();if(!selected)return;points.push({id:Date.now(),name:document.getElementById('name').value.trim(),category:document.getElementById('category').value,description:document.getElementById('description').value.trim(),address:document.getElementById('address').value.trim(),lat:selected.lat,lng:selected.lng});e.target.reset();dialog.close();save();};
+document.getElementById('search').oninput=render;
+document.querySelectorAll('.filter').forEach(b=>b.onclick=()=>{document.querySelectorAll('.filter').forEach(x=>x.classList.remove('active'));b.classList.add('active');active=b.dataset.cat;render()});
+document.getElementById('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(points,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tarazmap-data.json';a.click();URL.revokeObjectURL(a.href)};
+document.getElementById('langBtn').onclick=()=>{lang=lang==='ru'?'kk':'ru';document.documentElement.lang=lang;document.querySelectorAll('[data-ru]').forEach(el=>el.textContent=el.dataset[lang]);document.querySelectorAll('[data-placeholder-ru]').forEach(el=>el.placeholder=el.dataset['placeholder'+(lang==='ru'?'Ru':'Kk')]);document.getElementById('langBtn').textContent=lang==='ru'?'Қазақша':'Русский';render()};
+render();
+</script>
+</body></html>
